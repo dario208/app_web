@@ -1,0 +1,74 @@
+Installation de Nginx et uWSGI (si ce n'est pas déjà fait) :
+
+
+sudo apt-get update
+sudo apt-get install nginx python3-pip
+sudo pip3 install uwsgi
+Configuration de Nginx :
+
+Créez un fichier de configuration pour votre application Flask dans le répertoire /etc/nginx/sites-available/ (vous pouvez utiliser un nom significatif comme mon_application) en utilisant un éditeur de texte :
+
+sudo nano /etc/nginx/sites-available/mon_application
+Voici un exemple de configuration pour Nginx :
+
+
+server {
+    listen 80;
+    server_name votredomaine.com www.votredomaine.com;
+
+    location / {
+        include uwsgi_params;
+        uwsgi_pass unix:/chemin/vers/votre/application.sock;
+    }
+
+    location /static {
+        alias /chemin/vers/votre/application/static;
+    }
+
+    location /media {
+        alias /chemin/vers/votre/application/media;
+    }
+
+    error_page 404 /404.html;
+    location = /40x.html {
+        root /var/www/html;
+    }
+
+    error_page 500 502 503 504 /50x.html;
+    location = /50x.html {
+        root /var/www/html;
+    }
+}
+
+Assurez-vous de personnaliser les éléments suivants dans la configuration ci-dessus :
+
+votredomaine.com : Remplacez par votre nom de domaine ou l'adresse IP du serveur.
+/chemin/vers/votre/application.sock : Remplacez par le chemin du fichier socket uWSGI de votre application Flask. Ce fichier sera créé lorsque vous exécuterez uWSGI.
+/chemin/vers/votre/application/static : Remplacez par le chemin vers vos fichiers statiques, le cas échéant.
+/chemin/vers/votre/application/media : Remplacez par le chemin vers vos fichiers multimédias, le cas échéant.
+Activer le site et redémarrer Nginx :
+
+Créez un lien symbolique vers le fichier de configuration dans le répertoire /etc/nginx/sites-enabled/ :
+
+sudo ln -s /etc/nginx/sites-available/mon_application /etc/nginx/sites-enabled/
+Ensuite, testez la configuration Nginx pour vous assurer qu'il n'y a pas d'erreurs :
+
+sudo nginx -t
+Si la configuration est valide, redémarrez Nginx :
+
+
+sudo systemctl restart nginx
+Exécution de l'application Flask avec uWSGI :
+
+Assurez-vous que votre application Flask est en cours d'exécution avec uWSGI et écoute sur le fichier socket spécifié dans la configuration Nginx (/chemin/vers/votre/application.sock).
+
+Par exemple, vous pouvez exécuter votre application Flask avec uWSGI comme ceci (en supposant que votre application est dans le fichier app.py à la racine de votre projet) :
+
+uwsgi --socket /chemin/vers/votre/application.sock --module app:app --processes 4 --threads 2
+Assurez-vous d'adapter cette commande en fonction de votre structure de projet et de vos besoins spécifiques.
+
+Configuration du pare-feu (si nécessaire) :
+
+Si vous utilisez un pare-feu, assurez-vous d'ouvrir le port 80 (ou le port que vous avez spécifié) pour permettre le trafic HTTP.
+
+Votre application Flask devrait maintenant être accessible via Nginx en utilisant l'adresse IP ou le nom de domaine de votre serveur. N'oubliez pas de personnaliser davantage la configuration Nginx en fonction de vos besoins spécifiques, tels que la gestion des certificats SSL, la sécurité, etc.
